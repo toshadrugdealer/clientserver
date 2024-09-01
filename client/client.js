@@ -1,10 +1,12 @@
 const SERVER_HTTP_API = "http://localhost:5000";
+const SERVER_WS_API = "ws://localhost:8080";
 
 start();
 
 function start() {
   // startShortPolling(5000);
-  startLongPolling();
+  // startLongPolling();
+  startWebSocket();
 }
 
 function startShortPolling(delay, lastUserIndex = 0) {
@@ -29,6 +31,28 @@ function startLongPolling(lastUserIndex = 0) {
 
     startLongPolling(last);
   }, 0);
+}
+
+function startWebSocket() {
+  const ws = new WebSocket(`${SERVER_WS_API}/ws`);
+  const params = { lastUserIndex: 0 };
+
+  ws.onopen = () => {
+    console.log("Connected ws");
+
+    const paramsToString = JSON.stringify(params);
+    ws.send(paramsToString);
+  };
+  ws.onmessage = (event) => {
+    const { users, last } = JSON.parse(event.data);
+    addUsersToHTML(users);
+  };
+  ws.onclose = () => {
+    console.log("Connection closed");
+  };
+  ws.onerror = (error) => {
+    console.error(error);
+  };
 }
 
 function addUsersToHTML(users) {
