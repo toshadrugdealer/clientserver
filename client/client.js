@@ -6,7 +6,8 @@ start();
 function start() {
   // startShortPolling(5000);
   // startLongPolling();
-  startWebSocket();
+  // startWebSocket();
+  startServerSentEvents();
 }
 
 function startShortPolling(delay, lastUserIndex = 0) {
@@ -52,6 +53,17 @@ function startWebSocket() {
   };
   ws.onerror = (error) => {
     console.error(error);
+  };
+}
+
+function startServerSentEvents() {
+  const lastUserIndex = 0;
+  const eventSource = new EventSource(
+    `${SERVER_HTTP_API}/server-sent-event?last=${lastUserIndex}`
+  );
+  eventSource.onmessage = (event) => {
+    const { users } = JSON.parse(event.data);
+    addUsersToHTML(users);
   };
 }
 
