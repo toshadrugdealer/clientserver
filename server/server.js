@@ -1,9 +1,11 @@
 import express from "express";
 import cors from "cors";
 import { EventEmitter } from "events";
+import { WebSocketServer } from "ws";
 
 const HTTP_PORT = 5000;
 const PUSH_USER = "push-user";
+const WS_PORT = 8080;
 
 const app = express();
 app.use(cors());
@@ -38,8 +40,30 @@ app.listen(HTTP_PORT, () => {
   console.log(`server starting ${HTTP_PORT}`);
 });
 
+const wss = new WebSocketServer(
+  { port: WS_PORT },
+  () => `ws soket is running on port ${WS_PORT}`
+);
+wss.on("connection", (ws) => {
+  let last = 0;
+  ws.on("error", console.error);
+
+  ws.on("message", (data) => {
+    const { lastUserIndex } = JSON.parse(data);
+    last = lastUserIndex;
+  });
+  eventEmitter.on(PUSH_USER, () => {
+    const fetchUsers = usersDB.slice(last, usersDB.length);
+    last = usersDB.length;
+
+    const data = JSON.stringify({ users: fetchUsers, last });
+
+    ws.send(data);
+  });
+});
+
 (function pushUser() {
-  const delay = Math.floor(Math.random() * 4000);
+  const delay = Math.floor(Math.random() * 10000);
   setTimeout(() => {
     const user = generateUser();
     usersDB.push(user);
