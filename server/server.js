@@ -36,6 +36,25 @@ app.get("/long-polling", (req, res) => {
   });
 });
 
+app.get("/server-sent-event", (req, res) => {
+  const { last } = req.query;
+  let lastUserIndex = last;
+
+  res.writeHead(200, {
+    Connection: "keep-alive",
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+  });
+
+  eventEmitter.on(PUSH_USER, () => {
+    const fetchUsers = usersDB.slice(lastUserIndex, usersDB.length);
+    lastUserIndex = usersDB.length;
+    const data = JSON.stringify({ users: fetchUsers, last: lastUserIndex });
+
+    res.write(`data: ${data} \n\n`);
+  });
+});
+
 app.listen(HTTP_PORT, () => {
   console.log(`server starting ${HTTP_PORT}`);
 });
